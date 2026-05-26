@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Widget — Test Embed</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: #f0f2f5;
+      color: #1a1a1a;
+    }
+    h1 { margin-bottom: 8px; }
+    p { color: #6b7280; max-width: 600px; line-height: 1.6; }
+    .demo-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .info-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 24px 0;
+      border: 1px solid #e5e7eb;
+    }
+    .info-box h3 { margin: 0 0 8px; }
+    .info-box code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .attrs { margin-top: 16px; }
+    .attrs label { display: block; margin: 8px 0 4px; font-weight: 500; }
+    .attrs input, .attrs select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 300px; font-size: 14px; }
+    .attrs button { margin-top: 16px; padding: 10px 24px; background: #2C5F2D; color: #fff; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; }
+    .attrs button:hover { background: #97BC62; }
+  </style>
+</head>
+<body>
+  <div class="demo-content">
+    <h1>💬 Chat Widget — Test Embed</h1>
+    <p>This page embeds the chat widget for local development testing. The widget should appear as a floating button in the bottom-right corner.</p>
+
+    <div class="info-box">
+      <h3>Embedding Snippet (production)</h3>
+      <code>&lt;script src="chat-widget.js" data-client="mkstucco" data-sitekey="0x4..." async&gt;&lt;/script&gt;</code>
+    </div>
+
+    <div class="info-box">
+      <h3>Configuration</h3>
+      <p>The widget reads <code>data-client</code> and <code>data-sitekey</code> attributes from the script tag (or from the custom element directly). For local testing, configure below and click "Reload Widget".</p>
+      <div class="attrs">
+        <label for="client">data-client</label>
+        <input type="text" id="client" value="mkstucco" placeholder="Client key (e.g. mkstucco)">
+        <label for="sitekey">data-sitekey</label>
+        <input type="text" id="sitekey" value="0x4AAAAAAAy" placeholder="Turnstile site key">
+        <label for="apiBase">API Base URL</label>
+        <input type="text" id="apiBase" value="http://localhost:8787" placeholder="http://localhost:8787">
+        <button id="reloadBtn">Reload Widget</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- The widget is loaded here -->
+  <script type="module">
+    function loadWidget() {
+      // Remove existing widget if any
+      const existing = document.querySelector('chat-widget');
+      if (existing) existing.remove();
+
+      const client = document.getElementById('client').value || 'mkstucco';
+      const sitekey = document.getElementById('sitekey').value || '';
+      const apiBase = document.getElementById('apiBase').value || '';
+
+      // Create custom element
+      const widget = document.createElement('chat-widget');
+      widget.setAttribute('data-client', client);
+      if (sitekey) widget.setAttribute('data-sitekey', sitekey);
+      if (apiBase) widget.setAttribute('data-api-base', apiBase);
+      document.body.appendChild(widget);
+    }
+
+    document.getElementById('reloadBtn').addEventListener('click', loadWidget);
+
+    // Auto-load on page load
+    loadWidget();
+  </script>
+  <script type="module" src="./src/chat-widget.js"></script>
+</body>
+</html>

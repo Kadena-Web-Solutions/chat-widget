@@ -11,27 +11,27 @@ routes = [
 [[d1_databases]]
 binding = "DB"
 database_name = "chat-widget-db"
-id = "PLACEHOLDER_D1_DATABASE_ID"
+database_id = "0c95888a-b5a0-4c00-a330-040c73164a22"
 
 # KV Namespace for Chat Sessions
 [[kv_namespaces]]
 binding = "CHAT_SESSIONS"
-id = "PLACEHOLDER_CHAT_SESSIONS_KV_ID"
+id = "68279cbe12e3481dab9f692322789d1a"
 
 # KV Namespace for Rate Limiting
 [[kv_namespaces]]
 binding = "CHAT_RATE_LIMIT"
-id = "PLACEHOLDER_CHAT_RATE_LIMIT_KV_ID"
+id = "98c67abb680d492c9194f6b2b951258c"
 
 # KV Namespace for Chat Config
 [[kv_namespaces]]
 binding = "CHAT_CONFIG"
-id = "PLACEHOLDER_CHAT_CONFIG_KV_ID"
+id = "7a6941663f314347acf0ee693e1f6cf9"
 
 # KV Namespace for AI Budget Tracking
 [[kv_namespaces]]
 binding = "CHAT_BUDGET"
-id = "PLACEHOLDER_CHAT_BUDGET_KV_ID"
+id = "114f6fc4643f48be9a7112d3812c2978"
 
 # AI Binding for Workers AI
 [ai]

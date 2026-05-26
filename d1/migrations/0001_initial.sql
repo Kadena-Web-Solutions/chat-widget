@@ -1,5 +1,5 @@
--- d1/schema.sql
--- Chat Widget Database Schema
+-- d1/migrations/0001_initial.sql
+-- Chat Widget Database — Initial Migration
 -- Tables: clients, conversations, messages, leads, audit_events
 
 CREATE TABLE IF NOT EXISTS clients (
