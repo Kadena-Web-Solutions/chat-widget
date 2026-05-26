@@ -31,7 +31,7 @@ export function getSecurityHeaders() {
 
 export function getCorsHeaders(origin) {
   return {
-    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Origin': origin || '',
     ...CORS_HEADERS_BASE,
   };
 }

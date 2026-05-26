@@ -16,6 +16,22 @@ export function escapeHTML(str) {
 }
 
 /**
+ * Simple markdown-like formatting: bold (**text** or __text__) and italic (*text* or _text_).
+ * @param {string} text
+ * @returns {string}
+ */
+export function formatText(text) {
+  if (typeof text !== 'string') return '';
+  let html = escapeHTML(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>');
+  html = html.replace(/(^|[^*])\*(.+?)\*(?![*])/g, '$1<em>$2</em>');
+  html = html.replace(/(^|[^_])_(.+?)_(?!_)/g, '$1<em>$2</em>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+/**
  * Debounce a function.
  * @param {Function} fn
  * @param {number} ms
@@ -30,12 +46,9 @@ export function debounce(fn, ms) {
 }
 
 /**
- * Generate a random 32-character session token.
+ * Generate a random session token using crypto.randomUUID().
  * @returns {string}
  */
 export function generateSessionToken() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const arr = new Uint8Array(32);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => chars[b % chars.length]).join('');
+  return crypto.randomUUID();
 }

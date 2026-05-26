@@ -1,25 +1,6 @@
 // widget/src/message-list.js — Message list rendering
 
-import { escapeHTML } from './utils.js';
-
-/**
- * Simple markdown-like formatting: bold and italic.
- * @param {string} text
- * @returns {string}
- */
-function formatText(text) {
-  if (typeof text !== 'string') return '';
-  // Bold: **text** or __text__
-  let html = escapeHTML(text)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/__(.+?)__/g, '<strong>$1</strong>');
-  // Italic: *text* or _text_
-  html = html.replace(/(^|[^*])\*(.+?)\*(?![*])/g, '$1<em>$2</em>');
-  html = html.replace(/(^|[^_])_(.+?)_(?!_)/g, '$1<em>$2</em>');
-  // Line breaks
-  html = html.replace(/\n/g, '<br>');
-  return html;
-}
+import { formatText } from './utils.js';
 
 /**
  * Render messages into the shadow DOM message container.

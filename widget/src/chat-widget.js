@@ -3,7 +3,7 @@
 import { SHADOW_STYLES } from './shadow-styles.js';
 import { fetchConfig, applyTheme, API_BASE } from './theme-engine.js';
 import { renderMessages, appendMessage } from './message-list.js';
-import { escapeHTML, generateSessionToken } from './utils.js';
+import { escapeHTML, generateSessionToken, formatText } from './utils.js';
 import { initInputArea } from './input-area.js';
 import { initLeadForm, showLeadForm, hideLeadForm } from './lead-form.js';
 import { sendMessage } from './streaming-client.js';
@@ -180,17 +180,6 @@ export class ChatWidget extends HTMLElement {
     if (role === 'user') this._state.messageCount++;
   }
 
-  _formatText(text) {
-    if (typeof text !== 'string') return '';
-    let html = escapeHTML(text)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/__(.+?)__/g, '<strong>$1</strong>');
-    html = html.replace(/(^|[^*])\*(.+?)\*(?![*])/g, '$1<em>$2</em>');
-    html = html.replace(/(^|[^_])_(.+?)_(?!_)/g, '$1<em>$2</em>');
-    html = html.replace(/\n/g, '<br>');
-    return html;
-  }
-
   _setInputDisabled(disabled) {
     const textarea = this._shadowRoot.querySelector('.chat__input-field');
     const sendBtn = this._shadowRoot.querySelector('.chat__input-send');
@@ -252,7 +241,7 @@ export class ChatWidget extends HTMLElement {
       (chunk) => {
         this._showTyping(false);
         assistantContent.content += chunk;
-        assistantEl.innerHTML = this._formatText(assistantContent.content);
+        assistantEl.innerHTML = formatText(assistantContent.content);
         requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
       },
       () => {
@@ -299,7 +288,7 @@ export class ChatWidget extends HTMLElement {
   }
 
   _handleLeadSkip() {
-    this._state.leadCaptured = false;
+    this._state.leadCaptured = 'skipped';
     hideLeadForm(this._shadowRoot);
   }
 }

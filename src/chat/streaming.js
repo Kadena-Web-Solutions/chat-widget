@@ -25,6 +25,7 @@
 import { ChatError, ValidationError } from '../errors.js';
 import { checkBudget, streamAIResponse } from '../ai/gateway.js';
 import { getClientConfig, CHAT_CLIENTS } from '../config.js';
+import { SECURITY_HEADERS, CORS_HEADERS, validateOrigin } from '../middleware/cors.js';
 import {
   createConversation,
   getConversation,
@@ -293,10 +294,10 @@ export async function handleChatStream(request, env, ctx, params, origin) {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': origin || '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token',
+      'Access-Control-Allow-Origin': origin,
       'X-Session-Token': sessionToken,
+      ...SECURITY_HEADERS,
+      ...CORS_HEADERS,
     },
   });
 }

@@ -74,20 +74,26 @@ export async function validateSession(token, env) {
 export async function expireSession(token, env) {
   const key = `session:${token}`;
 
+  // Read session data BEFORE deleting — need conversationId for D1 expiry
+  let sessionData = null;
+  try {
+    const data = await env.CHAT_SESSIONS.get(key);
+    if (data) {
+      sessionData = JSON.parse(data);
+    }
+  } catch (err) {
+    console.warn('expireSession: could not read session before deletion', err);
+  }
+
   // Delete from KV
   await env.CHAT_SESSIONS.delete(key);
 
   // Mark conversation as expired in D1 if available
-  if (env.DB) {
+  if (env.DB && sessionData) {
     try {
       const { conversation } = await import('./conversation.js');
       if (conversation && conversation.expireConversation) {
-        // Get conversationId from session before deleting
-        const data = await env.CHAT_SESSIONS.get(key);
-        if (data) {
-          const session = JSON.parse(data);
-          await conversation.expireConversation(session.conversationId, env);
-        }
+        await conversation.expireConversation(sessionData.conversationId, env);
       }
     } catch (err) {
       // Non-fatal: just log and continue
