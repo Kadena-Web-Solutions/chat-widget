@@ -1,0 +1,3 @@
+-- d1/schema.sql
+-- Chat Widget Database Schema
+-- This schema will be populated in Wave 2

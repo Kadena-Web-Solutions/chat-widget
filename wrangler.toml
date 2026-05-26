@@ -1,0 +1,50 @@
+name = "chat-widget-worker"
+main = "src/index.js"
+minify = true
+compatibility_date = "2026-05-20"
+
+routes = [
+  { pattern = "chat-widget.kadenaweb.solutions", custom_domain = true }
+]
+
+# D1 Database for chat sessions and messages
+[[d1_databases]]
+binding = "DB"
+database_name = "chat-widget-db"
+id = "PLACEHOLDER_D1_DATABASE_ID"
+
+# KV Namespace for Chat Sessions
+[[kv_namespaces]]
+binding = "CHAT_SESSIONS"
+id = "PLACEHOLDER_CHAT_SESSIONS_KV_ID"
+
+# KV Namespace for Rate Limiting
+[[kv_namespaces]]
+binding = "CHAT_RATE_LIMIT"
+id = "PLACEHOLDER_CHAT_RATE_LIMIT_KV_ID"
+
+# KV Namespace for Chat Config
+[[kv_namespaces]]
+binding = "CHAT_CONFIG"
+id = "PLACEHOLDER_CHAT_CONFIG_KV_ID"
+
+# KV Namespace for AI Budget Tracking
+[[kv_namespaces]]
+binding = "CHAT_BUDGET"
+id = "PLACEHOLDER_CHAT_BUDGET_KV_ID"
+
+# AI Binding for Workers AI
+[ai]
+binding = "AI"
+
+# Placement for smart routing
+[placement]
+mode = "smart"
+
+# Observability
+[observability]
+enabled = true
+
+# Secrets (set via `wrangler secret put`):
+# - TURNSTILE_SECRET_KEY    — Cloudflare Turnstile secret for CAPTCHA
+# - ADMIN_TOKEN             — Token for admin endpoints

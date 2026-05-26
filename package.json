@@ -1,0 +1,26 @@
+{
+  "name": "chat-widget-worker",
+  "version": "1.0.0",
+  "description": "Real-time Chat Widget Worker with AI integration for Kadena Web Solutions",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "npm run deploy:worker && npm run deploy:widget",
+    "deploy:worker": "wrangler deploy",
+    "deploy:widget": "npm run build:widget && wrangler pages deploy widget/public --project-name=chat-widget-assets",
+    "verify": "curl -sI https://chat-widget.kadenaweb.solutions/health | head -15",
+    "audit": "node ../../scripts/check-headers.mjs chat-widget",
+    "build:widget": "node build-widget.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "vitest": "^2.0.0",
+    "@cloudflare/vitest-pool-workers": "^2.0.0",
+    "esbuild": "^0.24.0"
+  }
+}

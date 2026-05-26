@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Environment variables & secrets
+.env
+.dev.vars
+.env.local
+.env.production
+.env.staging
+
+# Cloudflare build output
+.wrangler/
+dist/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IDE & editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Git artifacts
+.git_disabled
+
+# Raw client assets folder
+TODO/
+
+# Widget build output (regenerated on build)
+widget/public/chat-widget.js
