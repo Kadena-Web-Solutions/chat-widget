@@ -47,6 +47,9 @@ jobs:
           secrets: |
             TURNSTILE_SECRET_KEY
             ADMIN_TOKEN
+        env:
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
 
   deploy-widget:
     runs-on: ubuntu-latest
