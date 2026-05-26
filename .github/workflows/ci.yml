@@ -37,3 +37,6 @@ jobs:
           wranglerVersion: '4'
       - name: Deploy Widget
         run: npm run deploy:widget
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
