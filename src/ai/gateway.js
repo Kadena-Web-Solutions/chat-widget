@@ -8,7 +8,7 @@
  * Tier Routing:
  *   1. PRIMARY   — try gemini-2.0-flash (best quality/cost)
  *   2. FALLBACK  — try gpt-4o-mini (alternative provider)
- *   3. EMERGENCY — try @cf/meta/llama-3.1-8b-instruct (Workers AI)
+ *   3. EMERGENCY — try @cf/zai-org/glm-4.7-flash (Workers AI)
  *
  * Each tier gets up to 3 retry attempts with exponential backoff before
  * falling through to the next tier.

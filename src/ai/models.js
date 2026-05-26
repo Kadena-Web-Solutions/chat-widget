@@ -8,7 +8,7 @@
  * Tiers:
  *   primary   — Best quality/cost balance (Gemini)
  *   fallback  — Alternative provider (OpenAI)
- *   emergency — Workers AI on-network model (Llama)
+ *   emergency — Workers AI on-network model (GLM)
  */
 
 // ─── Model Registry ────────────────────────────────────────────────────────────
@@ -37,13 +37,13 @@ export const MODEL_REGISTRY = {
   },
 
   // ── EMERGENCY ──────────────────────────────────────────────────────────────
-  '@cf/meta/llama-3.1-8b-instruct': {
-    id: '@cf/meta/llama-3.1-8b-instruct',
-    provider: 'meta',
-    name: 'Llama 3.1 8B Instruct',
-    inputCostPer1M: 0, // Included in Workers AI
-    outputCostPer1M: 0, // Included in Workers AI
-    maxTokens: 2048,
+  '@cf/zai-org/glm-4.7-flash': {
+    id: '@cf/zai-org/glm-4.7-flash',
+    provider: 'zhipu',
+    name: 'GLM 4.7 Flash',
+    inputCostPer1M: 0.060,
+    outputCostPer1M: 0.400,
+    maxTokens: 4096,
     tier: 'emergency',
   },
 };
