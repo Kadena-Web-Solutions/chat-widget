@@ -42,6 +42,8 @@ export async function fetchConfig(clientKey) {
     const chatConfig = data.chat || data;
     // Map API keys to DEFAULT_CONFIG keys (primaryColor -> primary, secondaryColor -> secondary)
     const mapped = {
+      ...(chatConfig.enabled != null && { enabled: chatConfig.enabled }),
+      ...(chatConfig.has_chat != null && { has_chat: chatConfig.has_chat }),
       ...(chatConfig.primaryColor && { primary: chatConfig.primaryColor }),
       ...(chatConfig.secondaryColor && { secondary: chatConfig.secondaryColor }),
       ...(chatConfig.fontFamily && { fontFamily: chatConfig.fontFamily }),

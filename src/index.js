@@ -96,6 +96,24 @@ router.add('GET', '/health/simple', async (_request, _env, _ctx, _params, origin
   return handleSimpleHealthCheck(origin);
 });
 
+// GET /api/health/detailed — Diagnostic binding check (no D1/KV probe queries)
+router.add('GET', '/api/health/detailed', async (_request, env, _ctx, _params, origin) => {
+  const checks = {
+    d1: !!env.DB,
+    kv_sessions: !!env.CHAT_SESSIONS,
+    kv_rate_limit: !!env.CHAT_RATE_LIMIT,
+    kv_config: !!env.CHAT_CONFIG,
+    kv_budget: !!env.CHAT_BUDGET,
+    ai: !!env.AI,
+    turnstile_configured: !!env.TURNSTILE_SECRET_KEY,
+    version: VERSION,
+    timestamp: new Date().toISOString(),
+    allowed_origins: Object.values(CHAT_CLIENTS).flatMap(c => c.allowedOrigins || []),
+  };
+
+  return corsResponse(checks, 200, origin);
+});
+
 // ─── Chat Endpoints ───────────────────────────────────────────────────────────
 
 // POST /api/chat — Start or continue a conversation
@@ -244,22 +262,42 @@ router.add('POST', '/api/lead', async (request, env, ctx, params, origin) => {
 // ─── Config Endpoint ──────────────────────────────────────────────────────────
 
 // GET /api/config — Get widget configuration for client (no auth required)
-router.add('GET', '/api/config', (request, env, ctx, params, origin) => {
-  const clientConfig = getClientConfig(request);
+router.add('GET', '/api/config', async (request, env, ctx, params, origin) => {
+  const url = new URL(request.url);
+  const clientKey = url.searchParams.get('client');
+  let kvConfig = null;
+
+  if (clientKey && env.CHAT_CONFIG) {
+    try {
+      kvConfig = await env.CHAT_CONFIG.get(`chat:config:${clientKey}`, 'json');
+    } catch (e) {
+      console.warn('[config] KV read error, falling back to hardcoded:', e.message);
+    }
+  }
+
+  const clientConfig = kvConfig || getClientConfig(request);
+
+  const isFromKV = !!kvConfig;
+  const name = isFromKV ? (clientKey || clientConfig.name || 'Unknown') : clientConfig.name;
+  const chat = isFromKV ? clientConfig : (clientConfig.chat || {});
+
+  const enabled = chat.enabled ?? true;
+
   return corsResponse({
-    name: clientConfig.name,
+    name,
+    has_chat: enabled !== false,
     chat: {
-      enabled: clientConfig.chat?.enabled ?? true,
-      botName: clientConfig.chat?.botName,
-      welcomeMessage: clientConfig.chat?.welcomeMessage,
-      primaryColor: clientConfig.chat?.primaryColor,
-      secondaryColor: clientConfig.chat?.secondaryColor,
-      fontFamily: clientConfig.chat?.fontFamily,
-      botAvatar: clientConfig.chat?.botAvatar,
-      position: clientConfig.chat?.position || 'bottom-right',
-      disclaimer: clientConfig.chat?.disclaimer,
-      leadCaptureAfter: clientConfig.chat?.leadCaptureAfter || 3,
-      sessionTimeout: clientConfig.chat?.sessionTimeout || 600,
+      enabled,
+      botName: chat.botName,
+      welcomeMessage: chat.welcomeMessage,
+      primaryColor: chat.primaryColor,
+      secondaryColor: chat.secondaryColor,
+      fontFamily: chat.fontFamily,
+      botAvatar: chat.botAvatar,
+      position: chat.position || 'bottom-right',
+      disclaimer: chat.disclaimer,
+      leadCaptureAfter: chat.leadCaptureAfter || 3,
+      sessionTimeout: chat.sessionTimeout || 600,
     },
   }, 200, origin);
 });

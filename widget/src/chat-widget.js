@@ -46,6 +46,12 @@ export class ChatWidget extends HTMLElement {
   async _initAsync(clientKey, siteKey, shadow) {
     const config = await fetchConfig(clientKey);
     this._state.config = config;
+
+    if (config.has_chat === false || config.enabled === false) {
+      this.style.display = 'none';
+      return;
+    }
+
     this._state.sessionId = generateSessionToken();
 
     applyTheme(shadow, config);
@@ -173,11 +179,13 @@ export class ChatWidget extends HTMLElement {
     }
   }
 
-  _addMessage(role, content) {
-    const msg = { role, content, timestamp: new Date().toISOString() };
+  _addMessage(roleOrMsg, content) {
+    const msg = typeof roleOrMsg === 'object'
+      ? roleOrMsg
+      : { role: roleOrMsg, content, timestamp: new Date().toISOString() };
     this._state.messages.push(msg);
     appendMessage(this._shadowRoot, msg);
-    if (role === 'user') this._state.messageCount++;
+    if (msg.role === 'user') this._state.messageCount++;
   }
 
   _setInputDisabled(disabled) {
@@ -255,8 +263,18 @@ export class ChatWidget extends HTMLElement {
         this._setInputDisabled(false);
         this._showTyping(false);
         this._abortController = null;
-        this._addMessage('system', 'Sorry, something went wrong. Please try again.');
-        console.error('[chat-widget] Streaming error:', err);
+        console.error('[chat-widget] Send error:', {
+          message: err.message,
+          name: err.name,
+          stack: err.stack,
+          clientKey,
+          sessionId: this._state.sessionId,
+        });
+        this._addMessage({
+          role: 'system',
+          content: `Failed to send message: ${err.message || 'Unknown error'}. Please try again.`,
+          timestamp: new Date().toISOString()
+        });
       },
       this._abortController.signal,
       (serverToken) => { this._state.sessionId = serverToken; }

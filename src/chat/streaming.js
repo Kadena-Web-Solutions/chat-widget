@@ -101,16 +101,25 @@ function extractIP(request) {
  * @returns {Promise<Response>}
  */
 export async function handleChatStream(request, env, ctx, params, origin) {
+  console.log('[streaming] Request received:', {
+    origin: request.headers.get('Origin'),
+    clientKey: resolveClientKey(request),
+    hasSessionToken: !!(extractSessionToken(request)),
+    userAgent: request.headers.get('User-Agent')?.substring(0, 50),
+  });
+
   // ── 1. Parse JSON body ──────────────────────────────────────────────────
   let body;
   try {
     body = await request.json();
   } catch {
+    console.warn('[streaming] Invalid JSON body');
     throw new ValidationError('Invalid JSON body');
   }
 
   const userMessage = body.message;
   if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
+    console.warn('[streaming] Message validation failed: empty or invalid');
     throw new ValidationError('Message is required');
   }
 
@@ -118,9 +127,16 @@ export async function handleChatStream(request, env, ctx, params, origin) {
   const clientConfig = getClientConfig(request);
   let clientKey = resolveClientKey(request);
 
+  console.log('[streaming] Origin validation:', {
+    origin,
+    clientKey,
+    clientName: clientConfig?.name,
+  });
+
   // ── 3. Sanitize user message ────────────────────────────────────────────
   const sanitized = sanitizeInput(userMessage, 2000);
   if (!sanitized) {
+    console.warn('[streaming] Message empty after sanitization');
     throw new ValidationError('Message is empty after sanitization');
   }
 
@@ -135,7 +151,6 @@ export async function handleChatStream(request, env, ctx, params, origin) {
   let sessionToken = null;
   let conversationId = null;
 
-  // Extract token from header first, then body ("session" field)
   const existingToken = extractSessionToken(request) || body.session;
   if (existingToken) {
     session = await validateSession(existingToken, env);
@@ -144,16 +159,26 @@ export async function handleChatStream(request, env, ctx, params, origin) {
       conversationId = session.conversationId;
       clientKey = session.clientKey;
     }
+    console.log('[streaming] Session validation:', {
+      hadToken: true,
+      validated: !!session,
+      conversationId,
+      clientKey,
+    });
   }
 
   // ── 5. Turnstile verification (first message only) ─────────────────────
   if (!session) {
+    console.log('[streaming] Creating new session (first message):', { clientKey });
+
     const turnstileToken = await extractTurnstileToken(request);
     if (turnstileToken) {
       const verification = await verifyTurnstile(turnstileToken, env);
       if (!verification.success) {
+        console.warn('[streaming] Turnstile verification failed:', verification.error);
         throw new ValidationError(verification.error || 'Turnstile verification failed');
       }
+      console.log('[streaming] Turnstile verification: passed');
     } else if (env.TURNSTILE_SECRET_KEY) {
       console.warn('[streaming] No Turnstile token provided — skipping verification');
     }
@@ -163,11 +188,17 @@ export async function handleChatStream(request, env, ctx, params, origin) {
     conversationId = session.conversationId;
 
     await createConversation(clientKey, sessionToken, env, conversationId);
+    console.log('[streaming] Session created:', { clientKey, conversationId });
   }
 
   // ── 6. Rate limit check ────────────────────────────────────────────────
   const rateLimitResult = await checkRateLimit(request, env);
+  console.log('[streaming] Rate limit check:', {
+    allowed: rateLimitResult.allowed,
+    retryAfter: rateLimitResult.retryAfter,
+  });
   if (!rateLimitResult.allowed) {
+    console.warn('[streaming] Rate limit exceeded:', rateLimitResult);
     throw new ChatError(
       `Rate limit exceeded. Try again in ${rateLimitResult.retryAfter || 60} seconds.`,
       429,
@@ -176,10 +207,17 @@ export async function handleChatStream(request, env, ctx, params, origin) {
   }
 
   // ── 7. AI budget check ─────────────────────────────────────────────────
-  await checkBudget(clientKey, env);
+  try {
+    await checkBudget(clientKey, env);
+    console.log('[streaming] Budget check: passed');
+  } catch (err) {
+    console.warn('[streaming] Budget check failed:', err.message);
+    throw err;
+  }
 
   // ── 8. Append user message to D1 ───────────────────────────────────────
   await appendMessage(conversationId, 'user', sanitized, null, null, env);
+  console.log('[streaming] User message appended to D1:', { conversationId, length: sanitized.length });
 
   // ── 9. Increment rate limit and session counters ───────────────────────
   const ip = extractIP(request);
@@ -193,6 +231,12 @@ export async function handleChatStream(request, env, ctx, params, origin) {
   // ── 10. Load full message history for AI context ───────────────────────
   const { messages: history } = await getConversation(conversationId, env);
   const aiMessages = history.map(m => ({ role: m.role, content: m.content }));
+  console.log('[streaming] AI call initiation:', {
+    conversationId,
+    historyCount: aiMessages.length,
+    clientKey,
+    model: clientConfig?.chat?.model,
+  });
 
   // ── 11. Call streamAIResponse — returns SSE ReadableStream ─────────────
   const aiStream = await streamAIResponse(aiMessages, clientKey, clientConfig, env, ctx);
@@ -213,6 +257,7 @@ export async function handleChatStream(request, env, ctx, params, origin) {
       let buffer = '';
 
       try {
+        let tokenCount = 0;
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -222,6 +267,7 @@ export async function handleChatStream(request, env, ctx, params, origin) {
 
           // Accumulate text by parsing SSE data lines
           buffer += decoder.decode(value, { stream: true });
+          tokenCount++;
 
           // Process complete lines
           while (buffer.includes('\n')) {
@@ -261,6 +307,12 @@ export async function handleChatStream(request, env, ctx, params, origin) {
           }
         }
 
+        console.log('[streaming] Stream completed:', {
+          conversationId,
+          tokenChunks: tokenCount,
+          assistantTextLength: assistantText.length,
+        });
+
         // ── Persist assistant message via ctx.waitUntil (non-blocking) ──
         if (assistantText) {
           ctx.waitUntil(
@@ -271,7 +323,11 @@ export async function handleChatStream(request, env, ctx, params, origin) {
 
         controller.close();
       } catch (err) {
-        console.error('[streaming] Stream wrapper error:', err.message);
+        console.error('[streaming] Stream wrapper error:', {
+          error: err.message,
+          conversationId,
+          assistantTextLength: assistantText.length,
+        });
         // Save any partial text we've accumulated
         if (assistantText) {
           ctx.waitUntil(
